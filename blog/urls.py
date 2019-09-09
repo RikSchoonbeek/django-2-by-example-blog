@@ -13,12 +13,20 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.views.generic.base import RedirectView
 from django.contrib import admin
 from django.urls import include, path, reverse
+from django.contrib.sitemaps.views import sitemap
+from blog_app.sitemaps import PostSitemap
 
-from django.views.generic.base import RedirectView
+sitemaps = {
+    'posts': PostSitemap,
+}
+
 
 urlpatterns = [
     path('', include('blog_app.urls')),
     path('admin/', admin.site.urls),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
+         name='django.contrib.sitemaps.views.sitemap')
 ]
