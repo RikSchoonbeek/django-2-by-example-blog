@@ -1,3 +1,4 @@
+from django.contrib.postgres.search import SearchVector
 from django.core.mail import send_mail
 from django.core.paginator import (
     Paginator, EmptyPage, PageNotAnInteger
@@ -8,7 +9,7 @@ from django.views.generic import ListView
 
 from taggit.models import Tag
 
-from .forms import CommentForm, EmailPostForm
+from .forms import EmailPostForm, CommentForm, SearchForm
 from .models import Comment, Post
 
 
@@ -60,7 +61,7 @@ def post_detail(request, year, month, day, post):
     else:
         comment_form = CommentForm()
 
-    #	List	of	similar	posts
+    # List of similar posts
     post_tags_ids = post.tags.values_list('id', flat=True)
     similar_posts = Post.published.filter(tags__in=post_tags_ids) \
         .exclude(id=post.id)
@@ -98,3 +99,21 @@ def post_share(request, post_id):
     return render(request, 'blog_app/post/share.html', {'post': post,
                                                         'form': form,
                                                         'sent': sent})
+
+
+def post_search(request):
+    form = SearchForm()
+    query = None
+    results = []
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = Post.objects.annotate(
+                search=SearchVector('title', 'body'),
+            ).filter(search=query)
+    return render(request,
+                  'blog_app/post/search.html',
+                  {'form': form,
+                   'query': query,
+                   'results': results})
